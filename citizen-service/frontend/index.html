@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Citizen Service</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <div class="container">
+
+        <h1>Community Civic Portal</h1>
+
+        <h2>Citizen Registration</h2>
+
+        <form id="citizenForm">
+
+            <label>Name</label>
+            <input type="text" id="name" required>
+
+            <label>Ward</label>
+            <input type="text" id="ward" required>
+
+            <label>Phone</label>
+            <input type="text" id="phone" required>
+
+            <button type="submit">Register Citizen</button>
+
+        </form>
+
+        <div id="result"></div>
+
+        <hr>
+
+        <h2>Find Citizen</h2>
+
+        <input
+            type="number"
+            id="searchId"
+            placeholder="Citizen ID"
+        >
+
+        <button onclick="findCitizen()">Find Citizen</button>
+
+        <div id="citizenDetails"></div>
+
+    </div>
+
+    <script src="script.js"></script>
+
+</body>
+
+</html>
