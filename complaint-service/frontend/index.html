@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Complaint Service</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <div class="container">
+
+        <h1>Community Civic Portal</h1>
+
+        <h2>Report Civic Issue</h2>
+
+        <form id="complaintForm">
+
+            <label>Citizen ID</label>
+            <input type="number" id="citizenId" required>
+
+            <label>Issue Description</label>
+            <textarea id="description" required></textarea>
+
+            <label>Location</label>
+            <input type="text" id="location" required>
+
+            <button type="submit">Submit Complaint</button>
+
+        </form>
+
+        <div id="result"></div>
+
+        <hr>
+
+        <h2>Track Complaint</h2>
+
+        <input type="number" id="searchComplaintId" placeholder="Complaint ID">
+
+        <button onclick="findComplaint()">Track Complaint</button>
+
+        <div id="complaintDetails"></div>
+
+    </div>
+
+    <script src="script.js"></script>
+
+</body>
+
+</html>
