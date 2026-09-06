@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <title>Department Service</title>
+
+    <link rel="stylesheet" href="style.css">
+
+</head>
+
+<body>
+
+    <div class="container">
+
+        <h1>Department Service</h1>
+
+        <section>
+
+            <h2>Add Department</h2>
+
+            <input
+                id="name"
+                type="text"
+                placeholder="Department name"
+            >
+
+            <input
+                id="contact"
+                type="text"
+                placeholder="Contact"
+            >
+
+            <textarea
+                id="description"
+                placeholder="Description"
+            ></textarea>
+
+            <button onclick="createDepartment()">
+                Add Department
+            </button>
+
+        </section>
+
+
+        <section>
+
+            <h2>Departments</h2>
+
+            <button onclick="loadDepartments()">
+                Load Departments
+            </button>
+
+            <div id="departments"></div>
+
+        </section>
+
+
+        <section>
+
+            <h2>Department Information</h2>
+
+            <input
+                id="departmentId"
+                type="number"
+                placeholder="Department ID"
+            >
+
+            <button onclick="loadComplaints()">
+                View Complaints
+            </button>
+
+            <button onclick="loadCitizens()">
+                View Citizens
+            </button>
+
+            <pre id="details"></pre>
+
+        </section>
+
+    </div>
+
+    <script src="script.js"></script>
+
+</body>
+
+</html>
