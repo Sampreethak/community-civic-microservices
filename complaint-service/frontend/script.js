@@ -1,55 +1,198 @@
-const API_URL = "http://localhost:5002";
+const API_URL = "http://127.0.0.1:5002";
 
-document.getElementById("complaintForm")
+
+// --------------------------------------------------
+// SUBMIT COMPLAINT
+// --------------------------------------------------
+
+document
+    .getElementById("complaintForm")
     .addEventListener("submit", async function(event) {
 
         event.preventDefault();
 
-        const citizenId = document.getElementById("citizenId").value;
-        const description = document.getElementById("description").value;
-        const location = document.getElementById("location").value;
+        const citizenId =
+            document.getElementById("citizenId").value;
 
-        const response = await fetch(API_URL + "/complaints", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                citizen_id: citizenId,
-                description: description,
-                location: location
-            })
-        });
+        const departmentId =
+            document.getElementById("departmentId").value;
 
-        const data = await response.json();
+        const description =
+            document.getElementById("description").value;
 
-        document.getElementById("result").innerHTML =
-            `<h3>Complaint Registered</h3>
-            Complaint ID: ${data.complaint_id}<br>
-            Status: ${data.status}`;
+        const location =
+            document.getElementById("location").value;
+
+        try {
+
+            const response = await fetch(
+                `${API_URL}/complaints`,
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+
+                    body: JSON.stringify({
+                        citizen_id: Number(citizenId),
+                        department_id: Number(departmentId),
+                        description: description,
+                        location: location
+                    })
+                }
+            );
+
+            const data = await response.json();
+
+            const result =
+                document.getElementById("result");
+
+            if (response.ok) {
+
+                result.innerHTML = `
+                    <h3>Complaint Submitted Successfully</h3>
+
+                    <p>
+                        <strong>Complaint ID:</strong>
+                        ${data.complaint.complaint_id}
+                    </p>
+
+                    <p>
+                        <strong>Citizen:</strong>
+                        ${data.complaint.citizen_name}
+                    </p>
+
+                    <p>
+                        <strong>Department:</strong>
+                        ${data.complaint.department_name}
+                    </p>
+
+                    <p>
+                        <strong>Description:</strong>
+                        ${data.complaint.description}
+                    </p>
+
+                    <p>
+                        <strong>Location:</strong>
+                        ${data.complaint.location}
+                    </p>
+
+                    <p>
+                        <strong>Status:</strong>
+                        ${data.complaint.status}
+                    </p>
+                `;
+
+                // Clear form
+                document.getElementById("complaintForm").reset();
+
+            } else {
+
+                result.innerHTML = `
+                    <h3>Error</h3>
+                    <p>${data.error || "Unable to submit complaint"}</p>
+                `;
+            }
+
+        } catch (error) {
+
+            document.getElementById("result").innerHTML = `
+                <h3>Error</h3>
+                <p>
+                    Complaint Service is unavailable.
+                    Please make sure the backend is running on port 5002.
+                </p>
+            `;
+
+            console.error(error);
+        }
+
     });
 
 
+// --------------------------------------------------
+// TRACK COMPLAINT
+// --------------------------------------------------
+
 async function findComplaint() {
 
-    const id = document.getElementById("searchComplaintId").value;
+    const complaintId =
+        document.getElementById("searchComplaintId").value;
 
-    const response = await fetch(API_URL + "/complaints/" + id);
+    if (!complaintId) {
 
-    const data = await response.json();
+        document.getElementById("complaintDetails").innerHTML = `
+            <p>Please enter a Complaint ID.</p>
+        `;
 
-    if (response.ok) {
+        return;
+    }
 
-        document.getElementById("complaintDetails").innerHTML =
-            `<h3>Complaint Details</h3>
-            Complaint ID: ${data.complaint_id}<br>
-            Citizen ID: ${data.citizen_id}<br>
-            Issue: ${data.description}<br>
-            Location: ${data.location}<br>
-            Status: ${data.status}`;
+    try {
 
-    } else {
+        const response = await fetch(
+            `${API_URL}/complaints/${complaintId}`
+        );
 
-        document.getElementById("complaintDetails").innerHTML = data.error;
+        const data = await response.json();
+
+        const details =
+            document.getElementById("complaintDetails");
+
+        if (response.ok) {
+
+            details.innerHTML = `
+                <h3>Complaint Details</h3>
+
+                <p>
+                    <strong>Complaint ID:</strong>
+                    ${data.complaint_id}
+                </p>
+
+                <p>
+                    <strong>Citizen ID:</strong>
+                    ${data.citizen_id}
+                </p>
+
+                <p>
+                    <strong>Department ID:</strong>
+                    ${data.department_id}
+                </p>
+
+                <p>
+                    <strong>Description:</strong>
+                    ${data.description}
+                </p>
+
+                <p>
+                    <strong>Location:</strong>
+                    ${data.location}
+                </p>
+
+                <p>
+                    <strong>Status:</strong>
+                    ${data.status}
+                </p>
+            `;
+
+        } else {
+
+            details.innerHTML = `
+                <p>
+                    ${data.error || "Complaint not found"}
+                </p>
+            `;
+        }
+
+    } catch (error) {
+
+        document.getElementById("complaintDetails").innerHTML = `
+            <p>
+                Complaint Service is unavailable.
+            </p>
+        `;
+
+        console.error(error);
     }
 }
