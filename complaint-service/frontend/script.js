@@ -55,43 +55,56 @@ document
 
                     <p>
                         <strong>Complaint ID:</strong>
-                        ${data.complaint.complaint_id}
+                        ${data.complaint_id}
                     </p>
 
                     <p>
                         <strong>Citizen:</strong>
-                        ${data.complaint.citizen_name}
+                        ${data.citizen_name}
+                    </p>
+
+                    <p>
+                        <strong>Citizen ID:</strong>
+                        ${data.citizen_id}
                     </p>
 
                     <p>
                         <strong>Department:</strong>
-                        ${data.complaint.department_name}
+                        ${data.department_name}
+                    </p>
+
+                    <p>
+                        <strong>Department ID:</strong>
+                        ${data.department_id}
                     </p>
 
                     <p>
                         <strong>Description:</strong>
-                        ${data.complaint.description}
+                        ${data.description}
                     </p>
 
                     <p>
                         <strong>Location:</strong>
-                        ${data.complaint.location}
+                        ${data.location}
                     </p>
 
                     <p>
                         <strong>Status:</strong>
-                        ${data.complaint.status}
+                        ${data.status}
                     </p>
                 `;
 
-                // Clear form
-                document.getElementById("complaintForm").reset();
+                document
+                    .getElementById("complaintForm")
+                    .reset();
 
             } else {
 
                 result.innerHTML = `
                     <h3>Error</h3>
-                    <p>${data.error || "Unable to submit complaint"}</p>
+                    <p>
+                        ${data.error || "Unable to submit complaint"}
+                    </p>
                 `;
             }
 
@@ -100,7 +113,7 @@ document
             document.getElementById("result").innerHTML = `
                 <h3>Error</h3>
                 <p>
-                    Complaint Service is unavailable.
+                    Unable to connect to Complaint Service.
                     Please make sure the backend is running on port 5002.
                 </p>
             `;
@@ -189,7 +202,7 @@ async function findComplaint() {
 
         document.getElementById("complaintDetails").innerHTML = `
             <p>
-                Complaint Service is unavailable.
+                Unable to connect to Complaint Service.
             </p>
         `;
 
