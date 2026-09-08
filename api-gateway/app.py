@@ -1,6 +1,7 @@
 from flask import Flask, request, Response
 from flask_cors import CORS
 import requests
+import itertools
 
 app = Flask(__name__)
 CORS(app)
@@ -10,8 +11,23 @@ CORS(app)
 # ---------------------------------------
 
 CITIZEN_SERVICE = "http://127.0.0.1:5001"
-COMPLAINT_SERVICE = "http://127.0.0.1:5002"
-DEPARTMENT_SERVICE = "http://127.0.0.1:5003"
+
+# Multiple Complaint Service instances
+COMPLAINT_SERVICES = [
+    "http://127.0.0.1:5002",
+    "http://127.0.0.1:5003",
+    "http://127.0.0.1:5004"
+]
+
+DEPARTMENT_SERVICE = "http://127.0.0.1:5005"
+
+
+# ---------------------------------------
+# LOAD BALANCER
+# ---------------------------------------
+
+# Round-robin load balancing
+complaint_balancer = itertools.cycle(COMPLAINT_SERVICES)
 
 
 # ---------------------------------------
@@ -35,31 +51,50 @@ def home():
 @app.route("/api/citizens", methods=["GET", "POST"])
 def citizens():
 
-    response = requests.request(
-        method=request.method,
-        url=f"{CITIZEN_SERVICE}/citizens",
-        json=request.get_json(silent=True)
-    )
+    try:
 
-    return Response(
-        response.content,
-        status=response.status_code,
-        content_type=response.headers.get("Content-Type")
-    )
+        response = requests.request(
+            method=request.method,
+            url=f"{CITIZEN_SERVICE}/citizens",
+            json=request.get_json(silent=True),
+            params=request.args,
+            timeout=5
+        )
+
+        return Response(
+            response.content,
+            status=response.status_code,
+            content_type=response.headers.get("Content-Type")
+        )
+
+    except requests.exceptions.RequestException:
+
+        return {
+            "error": "Citizen Service is unavailable"
+        }, 503
 
 
 @app.route("/api/citizens/<int:citizen_id>", methods=["GET"])
 def citizen(citizen_id):
 
-    response = requests.get(
-        f"{CITIZEN_SERVICE}/citizens/{citizen_id}"
-    )
+    try:
 
-    return Response(
-        response.content,
-        status=response.status_code,
-        content_type=response.headers.get("Content-Type")
-    )
+        response = requests.get(
+            f"{CITIZEN_SERVICE}/citizens/{citizen_id}",
+            timeout=5
+        )
+
+        return Response(
+            response.content,
+            status=response.status_code,
+            content_type=response.headers.get("Content-Type")
+        )
+
+    except requests.exceptions.RequestException:
+
+        return {
+            "error": "Citizen Service is unavailable"
+        }, 503
 
 
 # ---------------------------------------
@@ -69,32 +104,66 @@ def citizen(citizen_id):
 @app.route("/api/complaints", methods=["GET", "POST"])
 def complaints():
 
-    response = requests.request(
-        method=request.method,
-        url=f"{COMPLAINT_SERVICE}/complaints",
-        json=request.get_json(silent=True),
-        params=request.args
+    # Select the next Complaint Service instance
+    service = next(complaint_balancer)
+
+    print(
+        f"Routing complaint request to: {service}"
     )
 
-    return Response(
-        response.content,
-        status=response.status_code,
-        content_type=response.headers.get("Content-Type")
-    )
+    try:
+
+        response = requests.request(
+            method=request.method,
+            url=f"{service}/complaints",
+            json=request.get_json(silent=True),
+            params=request.args,
+            timeout=5
+        )
+
+        return Response(
+            response.content,
+            status=response.status_code,
+            content_type=response.headers.get("Content-Type")
+        )
+
+    except requests.exceptions.RequestException:
+
+        return {
+            "error": "Complaint Service instance is unavailable",
+            "instance": service
+        }, 503
 
 
 @app.route("/api/complaints/<int:complaint_id>", methods=["GET"])
 def complaint(complaint_id):
 
-    response = requests.get(
-        f"{COMPLAINT_SERVICE}/complaints/{complaint_id}"
+    # Select the next Complaint Service instance
+    service = next(complaint_balancer)
+
+    print(
+        f"Routing complaint request to: {service}"
     )
 
-    return Response(
-        response.content,
-        status=response.status_code,
-        content_type=response.headers.get("Content-Type")
-    )
+    try:
+
+        response = requests.get(
+            f"{service}/complaints/{complaint_id}",
+            timeout=5
+        )
+
+        return Response(
+            response.content,
+            status=response.status_code,
+            content_type=response.headers.get("Content-Type")
+        )
+
+    except requests.exceptions.RequestException:
+
+        return {
+            "error": "Complaint Service instance is unavailable",
+            "instance": service
+        }, 503
 
 
 # ---------------------------------------
@@ -104,32 +173,50 @@ def complaint(complaint_id):
 @app.route("/api/departments", methods=["GET", "POST"])
 def departments():
 
-    response = requests.request(
-        method=request.method,
-        url=f"{DEPARTMENT_SERVICE}/departments",
-        json=request.get_json(silent=True),
-        params=request.args
-    )
+    try:
 
-    return Response(
-        response.content,
-        status=response.status_code,
-        content_type=response.headers.get("Content-Type")
-    )
+        response = requests.request(
+            method=request.method,
+            url=f"{DEPARTMENT_SERVICE}/departments",
+            json=request.get_json(silent=True),
+            params=request.args,
+            timeout=5
+        )
+
+        return Response(
+            response.content,
+            status=response.status_code,
+            content_type=response.headers.get("Content-Type")
+        )
+
+    except requests.exceptions.RequestException:
+
+        return {
+            "error": "Department Service is unavailable"
+        }, 503
 
 
 @app.route("/api/departments/<int:department_id>", methods=["GET"])
 def department(department_id):
 
-    response = requests.get(
-        f"{DEPARTMENT_SERVICE}/departments/{department_id}"
-    )
+    try:
 
-    return Response(
-        response.content,
-        status=response.status_code,
-        content_type=response.headers.get("Content-Type")
-    )
+        response = requests.get(
+            f"{DEPARTMENT_SERVICE}/departments/{department_id}",
+            timeout=5
+        )
+
+        return Response(
+            response.content,
+            status=response.status_code,
+            content_type=response.headers.get("Content-Type")
+        )
+
+    except requests.exceptions.RequestException:
+
+        return {
+            "error": "Department Service is unavailable"
+        }, 503
 
 
 # ---------------------------------------
@@ -142,15 +229,24 @@ def department(department_id):
 )
 def department_complaints(department_id):
 
-    response = requests.get(
-        f"{DEPARTMENT_SERVICE}/departments/{department_id}/complaints"
-    )
+    try:
 
-    return Response(
-        response.content,
-        status=response.status_code,
-        content_type=response.headers.get("Content-Type")
-    )
+        response = requests.get(
+            f"{DEPARTMENT_SERVICE}/departments/{department_id}/complaints",
+            timeout=5
+        )
+
+        return Response(
+            response.content,
+            status=response.status_code,
+            content_type=response.headers.get("Content-Type")
+        )
+
+    except requests.exceptions.RequestException:
+
+        return {
+            "error": "Department Service is unavailable"
+        }, 503
 
 
 # ---------------------------------------
@@ -163,19 +259,28 @@ def department_complaints(department_id):
 )
 def department_citizens(department_id):
 
-    response = requests.get(
-        f"{DEPARTMENT_SERVICE}/departments/{department_id}/citizens"
-    )
+    try:
 
-    return Response(
-        response.content,
-        status=response.status_code,
-        content_type=response.headers.get("Content-Type")
-    )
+        response = requests.get(
+            f"{DEPARTMENT_SERVICE}/departments/{department_id}/citizens",
+            timeout=5
+        )
+
+        return Response(
+            response.content,
+            status=response.status_code,
+            content_type=response.headers.get("Content-Type")
+        )
+
+    except requests.exceptions.RequestException:
+
+        return {
+            "error": "Department Service is unavailable"
+        }, 503
 
 
 # ---------------------------------------
-# RUN GATEWAY
+# RUN API GATEWAY
 # ---------------------------------------
 
 if __name__ == "__main__":

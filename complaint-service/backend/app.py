@@ -4,10 +4,24 @@ import sqlite3
 import os
 import requests
 
-CITIZEN_SERVICE_URL = "http://localhost:5001"
+# --------------------------------------------------
+# CITIZEN SERVICE
+# --------------------------------------------------
+
+CITIZEN_SERVICE_URL = "http://127.0.0.1:5001"
+
+
+# --------------------------------------------------
+# FLASK APP
+# --------------------------------------------------
 
 app = Flask(__name__)
 CORS(app)
+
+
+# --------------------------------------------------
+# DATABASE
+# --------------------------------------------------
 
 DATABASE = os.path.join(
     os.path.dirname(__file__),
@@ -52,7 +66,9 @@ def create_complaint():
     description = data["description"]
     location = data["location"]
 
-    # Verify citizen using Citizen Service
+    # --------------------------------------------------
+    # VERIFY CITIZEN USING CITIZEN SERVICE
+    # --------------------------------------------------
 
     try:
 
@@ -81,10 +97,13 @@ def create_complaint():
 
     citizen = response.json()
 
+    # --------------------------------------------------
+    # CREATE COMPLAINT
+    # --------------------------------------------------
+
     status = "OPEN"
 
     db = get_db()
-
     cursor = db.cursor()
 
     cursor.execute("""
@@ -124,6 +143,7 @@ def create_complaint():
 
 # --------------------------------------------------
 # GET ALL COMPLAINTS
+#
 # GET /complaints
 # GET /complaints?department_id=1
 # --------------------------------------------------
@@ -134,7 +154,6 @@ def get_complaints():
     department_id = request.args.get("department_id")
 
     db = get_db()
-
     cursor = db.cursor()
 
     if department_id:
@@ -192,7 +211,6 @@ def get_complaints():
 def get_complaint(complaint_id):
 
     db = get_db()
-
     cursor = db.cursor()
 
     cursor.execute("""
@@ -227,11 +245,23 @@ def get_complaint(complaint_id):
     })
 
 
+# --------------------------------------------------
+# RUN COMPLAINT SERVICE
+# --------------------------------------------------
+
 if __name__ == "__main__":
 
     initialize_database()
 
+    # Default port is 5002.
+    # PORT can be changed to run multiple instances.
+
+    port = int(os.environ.get("PORT", 5002))
+
+    print(f"Starting Complaint Service on port {port}")
+
     app.run(
-        port=5002,
+        host="127.0.0.1",
+        port=port,
         debug=True
     )
