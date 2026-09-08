@@ -7,18 +7,27 @@ import requests
 app = Flask(__name__)
 CORS(app)
 
+
 # --------------------------------------------------
 # SERVICE URLs
 # --------------------------------------------------
 
 CITIZEN_SERVICE_URL = "http://127.0.0.1:5001"
+
+# Complaint Service instance used for
+# Department's internal service-to-service communication
 COMPLAINT_SERVICE_URL = "http://127.0.0.1:5002"
+
 
 # --------------------------------------------------
 # DATABASE
 # --------------------------------------------------
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = os.path.dirname(
+    os.path.dirname(
+        os.path.abspath(__file__)
+    )
+)
 
 DATABASE = os.path.join(
     BASE_DIR,
@@ -63,7 +72,7 @@ def home():
     return jsonify({
         "service": "Department Service",
         "status": "running",
-        "port": 5003
+        "port": 5005
     })
 
 
@@ -77,6 +86,7 @@ def create_department():
     data = request.get_json()
 
     if not data:
+
         return jsonify({
             "error": "JSON data is required"
         }), 400
@@ -86,6 +96,7 @@ def create_department():
     contact = data.get("contact")
 
     if not name:
+
         return jsonify({
             "error": "Department name is required"
         }), 400
@@ -94,7 +105,11 @@ def create_department():
 
     cursor = db.execute("""
         INSERT INTO departments
-        (name, description, contact)
+        (
+            name,
+            description,
+            contact
+        )
         VALUES (?, ?, ?)
     """, (
         name,
@@ -128,7 +143,11 @@ def get_departments():
     db = get_db()
 
     rows = db.execute("""
-        SELECT id, name, description, contact
+        SELECT
+            id,
+            name,
+            description,
+            contact
         FROM departments
         ORDER BY id
     """).fetchall()
@@ -159,7 +178,11 @@ def get_department(department_id):
     db = get_db()
 
     row = db.execute("""
-        SELECT id, name, description, contact
+        SELECT
+            id,
+            name,
+            description,
+            contact
         FROM departments
         WHERE id = ?
     """, (department_id,)).fetchone()
@@ -181,63 +204,23 @@ def get_department(department_id):
 
 
 # --------------------------------------------------
-# DEPARTMENT -> COMPLAINT SERVICE
+# DEPARTMENT → COMPLAINT SERVICE
 # --------------------------------------------------
 
-@app.route("/departments/<int:department_id>/complaints", methods=["GET"])
+@app.route(
+    "/departments/<int:department_id>/complaints",
+    methods=["GET"]
+)
 def get_department_complaints(department_id):
 
-    # First check that department exists
+    # Check that department exists
 
     db = get_db()
 
     department = db.execute("""
-        SELECT id, name
-        FROM departments
-        WHERE id = ?
-    """, (department_id,)).fetchone()
-
-    db.close()
-
-    if department is None:
-
-        return jsonify({
-            "error": "Department not found"
-        }), 404
-
-    try:
-
-        response = requests.get(
-            f"{COMPLAINT_SERVICE_URL}/complaints",
-            params={
-                "department_id": department_id
-            },
-            timeout=5
-        )
-
-        return jsonify({
-            "department": department[1],
-            "complaints": response.json()
-        }), response.status_code
-
-    except requests.exceptions.RequestException:
-
-        return jsonify({
-            "error": "Complaint Service is unavailable"
-        }), 503
-
-
-# --------------------------------------------------
-# DEPARTMENT -> CITIZEN/COMPLAINT SERVICES
-# --------------------------------------------------
-
-@app.route("/departments/<int:department_id>/citizens", methods=["GET"])
-def get_department_citizens(department_id):
-
-    db = get_db()
-
-    department = db.execute("""
-        SELECT id, name
+        SELECT
+            id,
+            name
         FROM departments
         WHERE id = ?
     """, (department_id,)).fetchone()
@@ -253,6 +236,83 @@ def get_department_citizens(department_id):
     try:
 
         # Ask Complaint Service for complaints
+        # belonging to this department
+
+        response = requests.get(
+            f"{COMPLAINT_SERVICE_URL}/complaints",
+            params={
+                "department_id": department_id
+            },
+            timeout=5
+        )
+
+    except requests.exceptions.RequestException:
+
+        return jsonify({
+            "error": "Complaint Service is unavailable"
+        }), 503
+
+    # Check Complaint Service response
+
+    if response.status_code != 200:
+
+        return jsonify({
+            "error": "Unable to retrieve complaints"
+        }), response.status_code
+
+    try:
+
+        complaints = response.json()
+
+    except ValueError:
+
+        return jsonify({
+            "error": "Invalid response from Complaint Service"
+        }), 502
+
+    return jsonify({
+        "department": department[1],
+        "complaints": complaints
+    })
+
+
+# --------------------------------------------------
+# DEPARTMENT → CITIZEN / COMPLAINT SERVICES
+# --------------------------------------------------
+
+@app.route(
+    "/departments/<int:department_id>/citizens",
+    methods=["GET"]
+)
+def get_department_citizens(department_id):
+
+    # Check that department exists
+
+    db = get_db()
+
+    department = db.execute("""
+        SELECT
+            id,
+            name
+        FROM departments
+        WHERE id = ?
+    """, (department_id,)).fetchone()
+
+    db.close()
+
+    if department is None:
+
+        return jsonify({
+            "error": "Department not found"
+        }), 404
+
+    try:
+
+        # --------------------------------------------------
+        # STEP 1:
+        # Get complaints from Complaint Service
+        # --------------------------------------------------
+
         complaint_response = requests.get(
             f"{COMPLAINT_SERVICE_URL}/complaints",
             params={
@@ -261,45 +321,67 @@ def get_department_citizens(department_id):
             timeout=5
         )
 
-        complaints = complaint_response.json()
-
-        citizens = []
-
-        # Get citizen information through Citizen Service
-        for complaint in complaints:
-
-            citizen_id = complaint.get("citizen_id")
-
-            if citizen_id is None:
-                continue
-
-            try:
-
-                citizen_response = requests.get(
-                    f"{CITIZEN_SERVICE_URL}/citizens/{citizen_id}",
-                    timeout=5
-                )
-
-                if citizen_response.status_code == 200:
-
-                    citizen = citizen_response.json()
-
-                    if citizen not in citizens:
-                        citizens.append(citizen)
-
-            except requests.exceptions.RequestException:
-                continue
-
-        return jsonify({
-            "department": department[1],
-            "citizens": citizens
-        })
-
     except requests.exceptions.RequestException:
 
         return jsonify({
             "error": "Complaint Service is unavailable"
         }), 503
+
+    if complaint_response.status_code != 200:
+
+        return jsonify({
+            "error": "Unable to retrieve complaints"
+        }), complaint_response.status_code
+
+    try:
+
+        complaints = complaint_response.json()
+
+    except ValueError:
+
+        return jsonify({
+            "error": "Invalid response from Complaint Service"
+        }), 502
+
+    # --------------------------------------------------
+    # STEP 2:
+    # Get citizen information from Citizen Service
+    # --------------------------------------------------
+
+    citizens = []
+
+    for complaint in complaints:
+
+        citizen_id = complaint.get("citizen_id")
+
+        if citizen_id is None:
+            continue
+
+        try:
+
+            citizen_response = requests.get(
+                f"{CITIZEN_SERVICE_URL}/citizens/{citizen_id}",
+                timeout=5
+            )
+
+            if citizen_response.status_code == 200:
+
+                citizen = citizen_response.json()
+
+                if citizen not in citizens:
+
+                    citizens.append(citizen)
+
+        except requests.exceptions.RequestException:
+
+            # Continue with the next citizen if
+            # one Citizen Service request fails
+            continue
+
+    return jsonify({
+        "department": department[1],
+        "citizens": citizens
+    })
 
 
 # --------------------------------------------------
@@ -310,8 +392,10 @@ if __name__ == "__main__":
 
     initialize_database()
 
+    print("Starting Department Service on port 5005")
+
     app.run(
         host="127.0.0.1",
-        port=5003,
-        debug=True
+        port=5005,
+        debug=False
     )

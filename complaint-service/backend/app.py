@@ -3,6 +3,7 @@ from flask_cors import CORS
 import sqlite3
 import os
 import requests
+import sys
 
 CITIZEN_SERVICE_URL = "http://localhost:5001"
 
@@ -227,11 +228,22 @@ def get_complaint(complaint_id):
     })
 
 
+# --------------------------------------------------
+# RUN COMPLAINT SERVICE
+# --------------------------------------------------
+
 if __name__ == "__main__":
 
     initialize_database()
 
+    # Default port is 5002
+    # A different port can be provided from CMD
+    port = int(sys.argv[1]) if len(sys.argv) > 1 else 5002
+
+    print(f"Starting Complaint Service on port {port}")
+
     app.run(
-        port=5002,
-        debug=True
+        host="127.0.0.1",
+        port=port,
+        debug=False
     )

@@ -1,4 +1,4 @@
-const API_URL = "http://127.0.0.1:5002";
+const API_URL = "http://127.0.0.1:5000/api";
 
 
 // --------------------------------------------------
@@ -69,11 +69,6 @@ document
                     </p>
 
                     <p>
-                        <strong>Department:</strong>
-                        ${data.department_name}
-                    </p>
-
-                    <p>
                         <strong>Department ID:</strong>
                         ${data.department_id}
                     </p>
@@ -113,8 +108,8 @@ document
             document.getElementById("result").innerHTML = `
                 <h3>Error</h3>
                 <p>
-                    Unable to connect to Complaint Service.
-                    Please make sure the backend is running on port 5002.
+                    Unable to connect to API Gateway.
+                    Please make sure the API Gateway is running on port 5000.
                 </p>
             `;
 
@@ -202,7 +197,7 @@ async function findComplaint() {
 
         document.getElementById("complaintDetails").innerHTML = `
             <p>
-                Unable to connect to Complaint Service.
+                Unable to connect to API Gateway.
             </p>
         `;
 
