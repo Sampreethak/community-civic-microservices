@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartCivic 360 | Municipal Microservices & Citizen Grievance Portal</title>
+    <!-- Modern Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/portal/style.css">
+</head>
+<body>
+    <div id="app" class="app-wrapper">
+
+        <!-- Top Navigation Header -->
+        <header class="app-header">
+            <div class="brand-section">
+                <div class="brand-logo-badge">
+                    <span class="emblem-icon">🏛️</span>
+                </div>
+                <div class="brand-info">
+                    <div class="brand-title-row">
+                        <span class="brand-title">SmartCivic 360</span>
+                        <span class="env-badge">PRODUCTION</span>
+                    </div>
+                    <span class="brand-subtitle">Municipal Microservices Grievance & Administration OS</span>
+                </div>
+            </div>
+
+            <!-- Global Telemetry Strip -->
+            <div class="gateway-status-strip">
+                <div class="status-indicator-pill" id="gatewayPill">
+                    <span class="pulse-dot"></span>
+                    <span class="status-text" id="gatewayStatusText">Gateway :5000 (Active)</span>
+                </div>
+                <div class="metric-mini-tag">
+                    <span class="metric-label">Instances:</span>
+                    <span class="metric-val" id="instanceCountPill">1</span>
+                </div>
+                <div class="metric-mini-tag">
+                    <span class="metric-label">Citizens:</span>
+                    <span class="metric-val" id="totalCitizensPill">...</span>
+                </div>
+                <div class="metric-mini-tag">
+                    <span class="metric-label">Complaints:</span>
+                    <span class="metric-val" id="totalComplaintsPill">...</span>
+                </div>
+                <div class="clock-display" id="clockDisplay">--:--:-- IST</div>
+            </div>
+        </header>
+
+        <!-- Main Workspace Shell -->
+        <div class="portal-shell">
+            <!-- Sidebar Navigation -->
+            <aside class="sidebar-nav">
+                <div class="nav-group-label">OPERATIONS CONSOLE</div>
+                <nav class="nav-links">
+                    <button class="nav-btn active" id="tabBtnOverview" onclick="switchTab('overview')">
+                        <span class="nav-icon">📊</span>
+                        <span class="nav-text">Overview & Topology</span>
+                    </button>
+                    <button class="nav-btn" id="tabBtnCitizens" onclick="switchTab('citizens')">
+                        <span class="nav-icon">👥</span>
+                        <span class="nav-text">Citizen Registry</span>
+                        <span class="nav-badge" id="citizenCountBadge">4</span>
+                    </button>
+                    <button class="nav-btn" id="tabBtnDepartments" onclick="switchTab('departments')">
+                        <span class="nav-icon">🏢</span>
+                        <span class="nav-text">Department Hub</span>
+                        <span class="nav-badge" id="deptCountBadge">8</span>
+                    </button>
+                    <button class="nav-btn" id="tabBtnComplaints" onclick="switchTab('complaints')">
+                        <span class="nav-icon">📝</span>
+                        <span class="nav-text">Complaints Center</span>
+                        <span class="nav-badge alert" id="complaintCountBadge">0</span>
+                    </button>
+                    <button class="nav-btn" id="tabBtnTelemetry" onclick="switchTab('telemetry')">
+                        <span class="nav-icon">⚡</span>
+                        <span class="nav-text">Telemetry & Scaling</span>
+                    </button>
+                </nav>
+
+                <div class="sidebar-pattern-card">
+                    <div class="pattern-header">
+                        <span class="shield-icon">🛡️</span>
+                        <span>Pattern Guard Active</span>
+                    </div>
+                    <ul class="pattern-checklist">
+                        <li><span class="check">✓</span> 10-Digit Mobile: <code>^[6-9]\d{9}$</code></li>
+                        <li><span class="check">✓</span> 12-Digit Aadhaar: <code>^[2-9]\d{11}$</code></li>
+                        <li><span class="check">✓</span> Citizen ID: <code>^CIT-[A-Z0-9]{3,4}-[A-Z0-9]{5}$</code></li>
+                        <li><span class="check">✓</span> Dept Code: <code>^DEPT-[A-Z]{3}-\d{3}$</code></li>
+                        <li><span class="check">✓</span> 6-Digit PIN: <code>^[1-9]\d{5}$</code></li>
+                    </ul>
+                </div>
+            </aside>
+
+            <!-- Main Dynamic Workspace View -->
+            <main class="main-content">
+
+                <!-- TAB 1: OVERVIEW & TOPOLOGY -->
+                <section id="viewOverview" class="tab-view active">
+                    <div class="page-title-banner">
+                        <div>
+                            <h1 class="page-heading">Municipal Ecosystem Overview</h1>
+                            <p class="page-subheading">High-availability civic microservices orchestrated through dynamic API Gateway with combined load-scoring.</p>
+                        </div>
+                        <div class="quick-actions">
+                            <button class="action-btn primary" onclick="switchTab('complaints')">+ File Complaint</button>
+                            <button class="action-btn secondary" onclick="switchTab('citizens')">+ Register Citizen</button>
+                        </div>
+                    </div>
+
+                    <!-- Top Statistics Grid -->
+                    <div class="stats-cards-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon-wrap indigo">👥</div>
+                            <div class="stat-meta">
+                                <span class="stat-caption">Registered Citizens</span>
+                                <span class="stat-number" id="statCitizens">--</span>
+                                <span class="stat-sub">100% Aadhaar & Phone verified</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon-wrap emerald">🏢</div>
+                            <div class="stat-meta">
+                                <span class="stat-caption">Active Departments</span>
+                                <span class="stat-number" id="statDepartments">--</span>
+                                <span class="stat-sub">Structured DEPT-XXX-000 schema</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon-wrap amber">📝</div>
+                            <div class="stat-meta">
+                                <span class="stat-caption">Total Complaints Logged</span>
+                                <span class="stat-number" id="statComplaints">--</span>
+                                <span class="stat-sub" id="statOpenComplaints">-- Open</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon-wrap cyan">⚡</div>
+                            <div class="stat-meta">
+                                <span class="stat-caption">Gateway Scaling Nodes</span>
+                                <span class="stat-number" id="statInstances">--</span>
+                                <span class="stat-sub">Auto-scaling (1 to 6 instances)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Microservices Architecture Flow Diagram -->
+                    <div class="card-panel topology-card">
+                        <div class="panel-header-row">
+                            <div class="panel-title-group">
+                                <h2>Distributed Microservices Architecture Topology</h2>
+                                <p>Dynamic routing, health checks, and service-to-service validation mesh</p>
+                            </div>
+                            <span class="badge-live">LIVE TELEMETRY</span>
+                        </div>
+
+                        <div class="topology-diagram">
+                            <!-- Client Layer -->
+                            <div class="topo-node client-node">
+                                <div class="topo-icon">💻</div>
+                                <div class="topo-label">Client Browser</div>
+                                <div class="topo-sub">Unified Web Portal</div>
+                                <div class="topo-port">:5000/portal</div>
+                            </div>
+
+                            <div class="topo-arrow">
+                                <span class="arrow-line"></span>
+                                <span class="arrow-text">HTTP / REST</span>
+                            </div>
+
+                            <!-- Gateway Layer -->
+                            <div class="topo-node gateway-node">
+                                <div class="topo-icon">🔀</div>
+                                <div class="topo-label">API Gateway</div>
+                                <div class="topo-sub">Load Balancer & Auto-scaler</div>
+                                <div class="topo-port">Port 5000</div>
+                                <div class="topo-tags">
+                                    <span>CPU: 50%</span>
+                                    <span>Reqs: 30%</span>
+                                    <span>Latency: 20%</span>
+                                </div>
+                            </div>
+
+                            <div class="topo-fork-arrows">
+                                <div class="fork-branch top"><span>/api/citizens</span></div>
+                                <div class="fork-branch mid"><span>/api/complaints</span></div>
+                                <div class="fork-branch btm"><span>/api/departments</span></div>
+                            </div>
+
+                            <!-- Services Layer -->
+                            <div class="topo-services-col">
+                                <div class="topo-node service-node citizen">
+                                    <div class="node-header">
+                                        <span class="badge-status online"></span>
+                                        <strong>Citizen Service</strong>
+                                    </div>
+                                    <div class="node-port">Port 5001</div>
+                                    <div class="node-desc">10-Digit Mobile, 12-Digit Aadhaar, PIN code, Ward DB</div>
+                                </div>
+
+                                <div class="topo-node service-node complaint">
+                                    <div class="node-header">
+                                        <span class="badge-status dynamic"></span>
+                                        <strong>Complaint Service</strong>
+                                    </div>
+                                    <div class="node-port">Ports 5002 - 5007 (Auto-scaling)</div>
+                                    <div class="node-desc">Tracking codes, priority triage, CPU load balancer</div>
+                                </div>
+
+                                <div class="topo-node service-node department">
+                                    <div class="node-header">
+                                        <span class="badge-status online"></span>
+                                        <strong>Department Service</strong>
+                                    </div>
+                                    <div class="node-port">Port 5005</div>
+                                    <div class="node-desc">Canonical DEPT-[A-Z]{3}-\d{3} Registry & Justification</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Navigation Cards -->
+                    <div class="overview-features-grid">
+                        <div class="feature-card" onclick="switchTab('citizens')">
+                            <div class="feature-icon">🛡️</div>
+                            <h3>Rigorous Pattern Validation</h3>
+                            <p>All inputs enforce client & server-side regex matching: Indian mobile numbers (10 digits starting 6-9), Aadhaar (12 digits with Verhoeff prefix checks), and RFC emails.</p>
+                            <span class="feature-link">Explore Citizen Registry →</span>
+                        </div>
+                        <div class="feature-card" onclick="switchTab('departments')">
+                            <div class="feature-icon">🏢</div>
+                            <h3>Standardized Department ID Schema</h3>
+                            <p>Learn why <code>DEPT-[A-Z]{3}-\d{3}</code> is the chosen municipal standard. Explore the interactive architecture breakdown and live regex testing sandbox.</p>
+                            <span class="feature-link">View Department Hub →</span>
+                        </div>
+                        <div class="feature-card" onclick="switchTab('complaints')">
+                            <div class="feature-icon">⚡</div>
+                            <h3>Real-Time Grievance Pipeline</h3>
+                            <p>Submit and track civic complaints with auto-generated tracking codes (<code>CMP-YYYY-XXXXX</code>), priority routing, and live status updates.</p>
+                            <span class="feature-link">Open Complaint Center →</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- TAB 2: CITIZEN REGISTRY -->
+                <section id="viewCitizens" class="tab-view">
+                    <div class="page-title-banner">
+                        <div>
+                            <h1 class="page-heading">Citizen Registration & Identity Registry</h1>
+                            <p class="page-subheading">Strict pattern-verified citizen database adhering to national identification, 10-digit mobile, 12-digit Aadhaar, and territorial Citizen ID standards.</p>
+                        </div>
+                    </div>
+
+                    <!-- CITIZEN ID PATTERN ARCHITECTURE & JUSTIFICATION BANNER -->
+                    <div class="card-panel justification-spotlight-panel" style="margin-bottom: 24px;">
+                        <div class="spotlight-badge-header">
+                            <span class="spotlight-tag">CITIZEN IDENTITY ARCHITECTURE</span>
+                            <h2>The Municipal Citizen ID Standard: <code>CIT-[WARD]-[TOKEN]</code></h2>
+                        </div>
+
+                        <div class="pattern-formula-display">
+                            <div class="formula-box">
+                                <div class="formula-token prefix">CIT-</div>
+                                <div class="formula-token sector">[WARD]</div>
+                                <div class="formula-token unit">-[TOKEN]</div>
+                            </div>
+                            <div class="formula-labels">
+                                <div class="label-box">Citizen Entity Namespace</div>
+                                <div class="label-box">Territorial Ward Division (e.g. W12, W05)</div>
+                                <div class="label-box">5-Char Anti-Enumeration Token</div>
+                            </div>
+                        </div>
+
+                        <div class="pillars-grid" style="grid-template-columns: repeat(4, 1fr);">
+                            <div class="pillar-card">
+                                <div class="pillar-num">01</div>
+                                <h4>Territorial Locality</h4>
+                                <p><code>CIT-W12-89412</code> directly maps the citizen to Ward 12, allowing local ward offices to verify jurisdictional authority instantly.</p>
+                            </div>
+                            <div class="pillar-card">
+                                <div class="pillar-num">02</div>
+                                <h4>Anti-Enumeration Protection</h4>
+                                <p>Sequential IDs (1, 2, 3) allow scrapers to harvest demographics. Structured random tokens protect citizen privacy on public portals.</p>
+                            </div>
+                            <div class="pillar-card">
+                                <div class="pillar-num">03</div>
+                                <h4>Multi-Zone Collision Proof</h4>
+                                <p>Guarantees unique identification across municipal amalgamations, regional database shards, and state digital lockers.</p>
+                            </div>
+                            <div class="pillar-card">
+                                <div class="pillar-num">04</div>
+                                <h4>Dual-Resolution Support</h4>
+                                <p>The civic microservices mesh accepts lookups via either numeric serial database key or structured canonical citizen code.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="two-col-grid">
+                        <!-- Citizen Registration Form -->
+                        <div class="card-panel">
+                            <div class="panel-header-row">
+                                <div class="panel-title-group">
+                                    <h2>Citizen Onboarding</h2>
+                                    <p>Pattern matching ensures zero corrupt or non-compliant records</p>
+                                </div>
+                                <span class="schema-chip">STRICT VALIDATION</span>
+                            </div>
+
+                            <form id="citizenForm" onsubmit="handleCitizenSubmit(event)" novalidate>
+                                <!-- Optional Citizen ID / Code -->
+                                <div class="form-group">
+                                    <div class="label-row">
+                                        <label for="citizenCodeInput">Citizen ID (Optional - Auto-Generated if blank)</label>
+                                        <span class="pattern-badge" id="citizenCodeBadge">^CIT-[A-Z0-9]{3,4}-[A-Z0-9]{5}$</span>
+                                    </div>
+                                    <input type="text" id="citizenCodeInput" placeholder="Auto-generated e.g. CIT-W12-89412" autocomplete="off" style="text-transform: uppercase;">
+                                    <div class="field-feedback" id="citizenCodeFeedback">Leave blank to auto-generate based on Ward</div>
+                                </div>
+
+                                <!-- Full Name -->
+                                <div class="form-group">
+                                    <div class="label-row">
+                                        <label for="citizenName">Full Name *</label>
+                                        <span class="pattern-badge" id="nameBadge">Letters only (2-50 chars)</span>
+                                    </div>
+                                    <input type="text" id="citizenName" placeholder="e.g., Rajesh Kumar Sharma" required autocomplete="off">
+                                    <div class="field-feedback" id="citizenNameFeedback"></div>
+                                </div>
+
+                                <!-- Phone Number -->
+                                <div class="form-group">
+                                    <div class="label-row">
+                                        <label for="citizenPhone">Mobile Number (10 Digits) *</label>
+                                        <span class="pattern-badge" id="phoneBadge">Pattern: ^[6-9]\d{9}$</span>
+                                    </div>
+                                    <div class="input-with-prefix">
+                                        <span class="input-prefix">+91</span>
+                                        <input type="tel" id="citizenPhone" maxlength="10" placeholder="9845123456" required autocomplete="off">
+                                    </div>
+                                    <div class="counter-row">
+                                        <span class="field-feedback" id="citizenPhoneFeedback">Must be exactly 10 digits starting with 6, 7, 8, or 9</span>
+                                        <span class="char-counter" id="phoneCounter">0/10</span>
+                                    </div>
+                                </div>
+
+                                <!-- Aadhaar Number -->
+                                <div class="form-group">
+                                    <div class="label-row">
+                                        <label for="citizenAadhaar">Aadhaar Card Number (12 Digits) *</label>
+                                        <span class="pattern-badge" id="aadhaarBadge">Pattern: ^[2-9]\d{3}\s?\d{4}\s?\d{4}$</span>
+                                    </div>
+                                    <input type="text" id="citizenAadhaar" maxlength="14" placeholder="2345 6789 0123" required autocomplete="off">
+                                    <div class="counter-row">
+                                        <span class="field-feedback" id="citizenAadhaarFeedback">Must be 12 digits (first digit 2-9; auto-spaced)</span>
+                                        <span class="char-counter" id="aadhaarCounter">0/12</span>
+                                    </div>
+                                </div>
+
+                                <!-- Email & Ward in 2-col -->
+                                <div class="form-row-2col">
+                                    <div class="form-group">
+                                        <div class="label-row">
+                                            <label for="citizenEmail">Email Address</label>
+                                            <span class="pattern-badge">RFC 5322</span>
+                                        </div>
+                                        <input type="email" id="citizenEmail" placeholder="citizen@example.com" autocomplete="off">
+                                        <div class="field-feedback" id="citizenEmailFeedback"></div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <div class="label-row">
+                                            <label for="citizenWard">Municipal Ward *</label>
+                                            <span class="pattern-badge">WARD-XX</span>
+                                        </div>
+                                        <input type="text" id="citizenWard" placeholder="e.g. WARD-12 or 12" required autocomplete="off">
+                                        <div class="field-feedback" id="citizenWardFeedback"></div>
+                                    </div>
+                                </div>
+
+                                <!-- PIN Code -->
+                                <div class="form-group">
+                                    <div class="label-row">
+                                        <label for="citizenPincode">Postal PIN Code (6 Digits)</label>
+                                        <span class="pattern-badge">^[1-9]\d{5}$</span>
+                                    </div>
+                                    <input type="text" id="citizenPincode" maxlength="6" placeholder="560001" autocomplete="off">
+                                    <div class="field-feedback" id="citizenPincodeFeedback"></div>
+                                </div>
+
+                                <button type="submit" class="submit-btn" id="btnRegisterCitizen">
+                                    <span class="btn-text">Register Citizen</span>
+                                    <span class="btn-spinner" style="display:none;"></span>
+                                </button>
+                            </form>
+
+                            <div id="citizenResultBox" class="result-box" style="display:none;"></div>
+                        </div>
+
+                        <!-- Citizen Directory List -->
+                        <div class="card-panel">
+                            <div class="panel-header-row">
+                                <div class="panel-title-group">
+                                    <h2>Verified Citizen Directory</h2>
+                                    <p>Live synchronized records from Citizen Service (:5001)</p>
+                                </div>
+                                <button class="refresh-btn" onclick="loadCitizens()" title="Refresh records">🔄</button>
+                            </div>
+
+                            <div class="search-filter-bar">
+                                <input type="text" id="citizenSearchInput" placeholder="Search by Name, Citizen ID, Phone, Aadhaar, or Ward..." oninput="filterCitizens()">
+                            </div>
+
+                            <div class="citizens-table-container">
+                                <table class="data-table" id="citizensTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Citizen ID (Pattern)</th>
+                                            <th>Citizen Name</th>
+                                            <th>Phone (10 Digits)</th>
+                                            <th>Aadhaar</th>
+                                            <th>Ward</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="citizensTableBody">
+                                        <tr><td colspan="6" class="loading-cell">Loading verified citizens...</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- TAB 3: DEPARTMENT HUB -->
+                <section id="viewDepartments" class="tab-view">
+                    <div class="page-title-banner">
+                        <div>
+                            <h1 class="page-heading">Municipal Department Hub & ID Architecture</h1>
+                            <p class="page-subheading">Comprehensive directory of municipal utility departments with strict canonical ID pattern validation and architectural rationale.</p>
+                        </div>
+                        <button class="action-btn highlight" onclick="openJustificationModal()">
+                            📘 View Department ID Justification Rationale
+                        </button>
+                    </div>
+
+                    <!-- EXPLICIT ID PATTERN ARCHITECTURE & JUSTIFICATION SHOWCASE -->
+                    <div class="card-panel justification-spotlight-panel">
+                        <div class="spotlight-badge-header">
+                            <span class="spotlight-tag">ARCHITECTURE DEEP DIVE</span>
+                            <h2>The Municipal Department ID Pattern Standard</h2>
+                        </div>
+
+                        <div class="pattern-formula-display">
+                            <div class="formula-box">
+                                <div class="formula-token prefix">DEPT-</div>
+                                <div class="formula-token sector">[A-Z]{3}</div>
+                                <div class="formula-token unit">-\d{3}</div>
+                            </div>
+                            <div class="formula-labels">
+                                <div class="label-box">Standard Namespace</div>
+                                <div class="label-box">3-Letter Mnemonic Sector</div>
+                                <div class="label-box">3-Digit Hierarchical Division</div>
+                            </div>
+                        </div>
+
+                        <!-- 5 Pillars Grid -->
+                        <div class="pillars-grid">
+                            <div class="pillar-card">
+                                <div class="pillar-num">01</div>
+                                <h4>Semantic Human-Readability</h4>
+                                <p>Raw IDs (e.g. <code>#4</code>) convey zero context. <code>DEPT-WAT-101</code> instantly tells citizens and call-center dispatchers the exact utility sector and branch without looking up relational tables.</p>
+                            </div>
+                            <div class="pillar-card">
+                                <div class="pillar-num">02</div>
+                                <h4>Gateway Regex Triage</h4>
+                                <p>The API Gateway and message brokers (Kafka/RabbitMQ) can parse the sector token (<code>WAT</code>, <code>ELE</code>) via zero-overhead regex to route tickets to specific queues with zero DB overhead.</p>
+                            </div>
+                            <div class="pillar-card">
+                                <div class="pillar-num">03</div>
+                                <h4>Multi-Zone Collision Resistance</h4>
+                                <p>When municipal jurisdictions merge or federate with state portals, auto-increment integer IDs collide immediately. Structured namespace codes guarantee global uniqueness across database clusters.</p>
+                            </div>
+                            <div class="pillar-card">
+                                <div class="pillar-num">04</div>
+                                <h4>E-Governance & ISO Alignment</h4>
+                                <p>Directly complies with India's National Urban Digital Mission (NUDM) taxonomy and ISO 3166-2 division codes for standardized public civic services classification.</p>
+                            </div>
+                            <div class="pillar-card">
+                                <div class="pillar-num">05</div>
+                                <h4>Telemetry & Log Aggregation</h4>
+                                <p>Monitoring stacks (Datadog, Prometheus, Grafana) can aggregate incident latency spikes and complaint surges by sector token directly from raw log lines without deserializing JSON.</p>
+                            </div>
+                        </div>
+
+                        <!-- Interactive Pattern Sandbox -->
+                        <div class="pattern-sandbox-box">
+                            <div class="sandbox-title">
+                                <span>🧪 Interactive Department ID Regex Sandbox</span>
+                                <span class="pattern-spec">Pattern: <code>^DEPT-[A-Z]{3}-\d{3}$</code></span>
+                            </div>
+                            <div class="sandbox-input-row">
+                                <input type="text" id="sandboxDeptInput" placeholder="Try typing: DEPT-WAT-101 or DEPT-ELE-205" value="DEPT-WAT-101" oninput="testDeptPatternSandbox()">
+                                <div id="sandboxVerdict" class="sandbox-verdict valid">✓ VALID PATTERN</div>
+                            </div>
+                            <div id="sandboxExplanation" class="sandbox-explanation">
+                                Parsed Sector: <strong>WAT (Water Supply & Sewerage)</strong> | Division Unit: <strong>101 (Central Supply Division)</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Department Form & Directory Grid -->
+                    <div class="two-col-grid" style="margin-top: 24px;">
+                        <!-- Add Department Form -->
+                        <div class="card-panel">
+                            <div class="panel-header-row">
+                                <div class="panel-title-group">
+                                    <h2>Add Municipal Department</h2>
+                                    <p>Register new civic bodies enforcing the standardized ID pattern</p>
+                                </div>
+                                <span class="schema-chip">DEPT-[A-Z]{3}-\d{3}</span>
+                            </div>
+
+                            <form id="departmentForm" onsubmit="handleDepartmentSubmit(event)" novalidate>
+                                <!-- Department Code / ID -->
+                                <div class="form-group">
+                                    <div class="label-row">
+                                        <label for="deptCode">Department ID / Code *</label>
+                                        <span class="pattern-badge" id="deptCodeBadge">^DEPT-[A-Z]{3}-\d{3}$</span>
+                                    </div>
+                                    <input type="text" id="deptCode" placeholder="e.g., DEPT-WAT-101" required autocomplete="off" style="text-transform: uppercase;">
+                                    <div class="field-feedback" id="deptCodeFeedback">Must match DEPT-[SECTOR]-[NUM] (e.g. DEPT-WAT-101)</div>
+                                </div>
+
+                                <!-- Department Name -->
+                                <div class="form-group">
+                                    <div class="label-row">
+                                        <label for="deptName">Department Name *</label>
+                                        <span class="pattern-badge">3-70 characters</span>
+                                    </div>
+                                    <input type="text" id="deptName" placeholder="e.g., Water Supply & Sewerage Board" required autocomplete="off">
+                                    <div class="field-feedback" id="deptNameFeedback"></div>
+                                </div>
+
+                                <!-- Contact & Email in 2-col -->
+                                <div class="form-row-2col">
+                                    <div class="form-group">
+                                        <div class="label-row">
+                                            <label for="deptContact">Official Contact *</label>
+                                            <span class="pattern-badge">10 Digits / 1800</span>
+                                        </div>
+                                        <input type="tel" id="deptContact" placeholder="e.g. 9845011001" required autocomplete="off">
+                                        <div class="field-feedback" id="deptContactFeedback"></div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <div class="label-row">
+                                            <label for="deptEmail">Official Email</label>
+                                            <span class="pattern-badge">@civic.gov.in</span>
+                                        </div>
+                                        <input type="email" id="deptEmail" placeholder="dept@civic.gov.in" autocomplete="off">
+                                        <div class="field-feedback" id="deptEmailFeedback"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Head Officer -->
+                                <div class="form-group">
+                                    <label for="deptHead">Chief Engineer / Head Officer</label>
+                                    <input type="text" id="deptHead" placeholder="e.g., Er. Ananya Deshmukh" autocomplete="off">
+                                </div>
+
+                                <!-- Description -->
+                                <div class="form-group">
+                                    <label for="deptDescription">Operational Scope & Description</label>
+                                    <textarea id="deptDescription" placeholder="Primary civic responsibilities, emergency jurisdiction, and public SLA metrics..." rows="3"></textarea>
+                                </div>
+
+                                <button type="submit" class="submit-btn" id="btnRegisterDept">
+                                    <span class="btn-text">Register Department</span>
+                                    <span class="btn-spinner" style="display:none;"></span>
+                                </button>
+                            </form>
+
+                            <div id="deptResultBox" class="result-box" style="display:none;"></div>
+                        </div>
+
+                        <!-- Department Catalog Cards -->
+                        <div class="card-panel">
+                            <div class="panel-header-row">
+                                <div class="panel-title-group">
+                                    <h2>Municipal Departments Catalog</h2>
+                                    <p>Live active departments available for complaint dispatch</p>
+                                </div>
+                                <button class="refresh-btn" onclick="loadDepartments()" title="Refresh departments">🔄</button>
+                            </div>
+
+                            <div class="departments-grid" id="departmentsGrid">
+                                <div class="loading-cell">Loading departments...</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Department Drill-down Inspector -->
+                    <div class="card-panel" id="deptInspectorPanel" style="margin-top: 24px;">
+                        <div class="panel-header-row">
+                            <div class="panel-title-group">
+                                <h2>Department Operational Inspector</h2>
+                                <p>Inspect live complaints and registered citizens assigned to a specific department</p>
+                            </div>
+                            <div class="dept-selector-group">
+                                <label for="inspectorDeptSelect">Select Department:</label>
+                                <select id="inspectorDeptSelect" onchange="inspectDepartment()">
+                                    <option value="">-- Choose a Department --</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div id="inspectorContent" class="inspector-content">
+                            <div class="empty-state-notice">Select a department above or click "Inspect" on any department card to review linked complaints and citizens.</div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- TAB 4: COMPLAINT CENTER -->
+                <section id="viewComplaints" class="tab-view">
+                    <div class="page-title-banner">
+                        <div>
+                            <h1 class="page-heading">Civic Grievance & Complaint Center</h1>
+                            <p class="page-subheading">End-to-end civic complaint submission, automated tracking code assignment, and SLA resolution tracking.</p>
+                        </div>
+                    </div>
+
+                    <div class="two-col-grid">
+                        <!-- File Complaint Form -->
+                        <div class="card-panel">
+                            <div class="panel-header-row">
+                                <div class="panel-title-group">
+                                    <h2>Report Civic Issue</h2>
+                                    <p>File grievances with automatic citizen & department verification</p>
+                                </div>
+                                <span class="schema-chip">CMP-2026-XXXXX</span>
+                            </div>
+
+                            <form id="complaintForm" onsubmit="handleComplaintSubmit(event)" novalidate>
+                                <!-- Citizen Selector / ID -->
+                                <div class="form-group">
+                                    <div class="label-row">
+                                        <label for="complaintCitizenId">Citizen ID *</label>
+                                        <span class="pattern-badge" id="citizenVerifyBadge">Verified Citizen</span>
+                                    </div>
+                                    <div class="input-with-action">
+                                        <input type="text" id="complaintCitizenId" placeholder="Enter Citizen ID or Code (e.g., CIT-W12-98451 or 1)" required oninput="verifyCitizenInComplaint()">
+                                        <span class="citizen-name-tag" id="citizenNameTag"></span>
+                                    </div>
+                                    <div class="field-feedback" id="complaintCitizenFeedback">Enter a valid ID from the Citizen Registry</div>
+                                </div>
+
+                                <!-- Department Selector -->
+                                <div class="form-group">
+                                    <div class="label-row">
+                                        <label for="complaintDeptSelect">Assigned Department *</label>
+                                        <span class="pattern-badge">DEPT-XXX-000</span>
+                                    </div>
+                                    <select id="complaintDeptSelect" required>
+                                        <option value="">-- Select Responsible Department --</option>
+                                    </select>
+                                    <div class="field-feedback" id="complaintDeptFeedback"></div>
+                                </div>
+
+                                <!-- Priority Selector -->
+                                <div class="form-group">
+                                    <label>Issue Urgency / Priority *</label>
+                                    <div class="priority-pill-selector">
+                                        <label class="priority-pill low">
+                                            <input type="radio" name="priority" value="LOW">
+                                            <span>🟢 Low</span>
+                                        </label>
+                                        <label class="priority-pill medium">
+                                            <input type="radio" name="priority" value="MEDIUM" checked>
+                                            <span>🟡 Medium</span>
+                                        </label>
+                                        <label class="priority-pill high">
+                                            <input type="radio" name="priority" value="HIGH">
+                                            <span>🟠 High</span>
+                                        </label>
+                                        <label class="priority-pill critical">
+                                            <input type="radio" name="priority" value="CRITICAL">
+                                            <span>🔴 Critical</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- Location & PIN -->
+                                <div class="form-row-2col">
+                                    <div class="form-group">
+                                        <div class="label-row">
+                                            <label for="complaintLocation">Incident Location *</label>
+                                            <span class="pattern-badge">Min 3 chars</span>
+                                        </div>
+                                        <input type="text" id="complaintLocation" placeholder="e.g. 4th Cross, Near Water Tank, Ward 12" required autocomplete="off">
+                                        <div class="field-feedback" id="complaintLocationFeedback"></div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <div class="label-row">
+                                            <label for="complaintPincode">Area PIN Code</label>
+                                            <span class="pattern-badge">6 digits</span>
+                                        </div>
+                                        <input type="text" id="complaintPincode" maxlength="6" placeholder="560001" autocomplete="off">
+                                        <div class="field-feedback" id="complaintPincodeFeedback"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Description -->
+                                <div class="form-group">
+                                    <div class="label-row">
+                                        <label for="complaintDescription">Detailed Issue Description *</label>
+                                        <span class="char-counter" id="descCounter">0/1000</span>
+                                    </div>
+                                    <textarea id="complaintDescription" rows="4" placeholder="Describe the civic malfunction, hazard, duration, and landmarks in detail (min 10 characters)..." required oninput="updateDescCounter()"></textarea>
+                                    <div class="field-feedback" id="complaintDescriptionFeedback">Minimum 10 characters required for accurate field dispatch</div>
+                                </div>
+
+                                <button type="submit" class="submit-btn" id="btnSubmitComplaint">
+                                    <span class="btn-text">Submit Civic Grievance</span>
+                                    <span class="btn-spinner" style="display:none;"></span>
+                                </button>
+                            </form>
+
+                            <div id="complaintResultBox" class="result-box" style="display:none;"></div>
+                        </div>
+
+                        <!-- Live Complaint Tracker & Pipeline -->
+                        <div class="card-panel">
+                            <div class="panel-header-row">
+                                <div class="panel-title-group">
+                                    <h2>Track Complaint by Token</h2>
+                                    <p>Live status timeline via CMP-2026-XXXXX or numeric ID</p>
+                                </div>
+                            </div>
+
+                            <div class="tracker-search-box">
+                                <input type="text" id="searchTrackingInput" placeholder="Enter Complaint ID or Code (e.g. CMP-2026-W8910 or 1)">
+                                <button class="action-btn primary" onclick="trackComplaint()">Track Ticket</button>
+                            </div>
+
+                            <!-- Tracking Pipeline Progression Display -->
+                            <div id="trackingPipeline" class="tracking-pipeline-container" style="display: none;">
+                                <div class="pipeline-header">
+                                    <div class="pipeline-code" id="pipelineCode">CMP-2026-W8910</div>
+                                    <div class="pipeline-status-badge" id="pipelineStatusBadge">IN_PROGRESS</div>
+                                </div>
+
+                                <div class="pipeline-steps">
+                                    <div class="pipe-step completed" id="step1">
+                                        <div class="step-circle">1</div>
+                                        <div class="step-title">Grievance Logged</div>
+                                        <div class="step-desc">Validated & Dispatched</div>
+                                    </div>
+                                    <div class="pipe-line" id="line1"></div>
+                                    <div class="pipe-step active" id="step2">
+                                        <div class="step-circle">2</div>
+                                        <div class="step-title">Department Assigned</div>
+                                        <div class="step-desc" id="step2Dept">DEPT-WAT-101</div>
+                                    </div>
+                                    <div class="pipe-line" id="line2"></div>
+                                    <div class="pipe-step" id="step3">
+                                        <div class="step-circle">3</div>
+                                        <div class="step-title">Field Inspection</div>
+                                        <div class="step-desc">Crew dispatched</div>
+                                    </div>
+                                    <div class="pipe-line" id="line3"></div>
+                                    <div class="pipe-step" id="step4">
+                                        <div class="step-circle">4</div>
+                                        <div class="step-title">Resolved & Closed</div>
+                                        <div class="step-desc">Citizen verified</div>
+                                    </div>
+                                </div>
+
+                                <div class="ticket-details-summary" id="pipelineDetails"></div>
+
+                                <!-- Status Modifier for Admin Demo -->
+                                <div class="admin-status-tool">
+                                    <span>⚙️ Update Status (Admin Console):</span>
+                                    <select id="quickStatusSelect">
+                                        <option value="OPEN">OPEN</option>
+                                        <option value="IN_PROGRESS">IN_PROGRESS</option>
+                                        <option value="RESOLVED">RESOLVED</option>
+                                        <option value="CLOSED">CLOSED</option>
+                                    </select>
+                                    <button class="action-btn secondary sm" onclick="changeComplaintStatus()">Update</button>
+                                </div>
+                            </div>
+
+                            <!-- Filterable Complaints Registry Table -->
+                            <div class="complaints-table-wrapper" style="margin-top: 20px;">
+                                <div class="table-filter-header">
+                                    <h3>All Active Complaints</h3>
+                                    <div class="filter-controls">
+                                        <select id="filterStatusSelect" onchange="loadComplaints()">
+                                            <option value="">All Statuses</option>
+                                            <option value="OPEN">Open</option>
+                                            <option value="IN_PROGRESS">In Progress</option>
+                                            <option value="RESOLVED">Resolved</option>
+                                        </select>
+                                        <button class="refresh-btn" onclick="loadComplaints()" title="Refresh">🔄</button>
+                                    </div>
+                                </div>
+
+                                <table class="data-table" id="complaintsTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Ticket</th>
+                                            <th>Citizen</th>
+                                            <th>Department</th>
+                                            <th>Priority</th>
+                                            <th>Status</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="complaintsTableBody">
+                                        <tr><td colspan="6" class="loading-cell">Loading complaints...</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- TAB 5: TELEMETRY & AUTO-SCALING -->
+                <section id="viewTelemetry" class="tab-view">
+                    <div class="page-title-banner">
+                        <div>
+                            <h1 class="page-heading">API Gateway Telemetry & Dynamic Auto-Scaler</h1>
+                            <p class="page-subheading">Real-time process telemetry, load-balancing weighted scoring, and automated instance scaling (MIN 1 to MAX 6).</p>
+                        </div>
+                    </div>
+
+                    <!-- Auto-Scaler Configuration Strip -->
+                    <div class="stats-cards-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon-wrap indigo">⚙️</div>
+                            <div class="stat-meta">
+                                <span class="stat-caption">Scaling Range</span>
+                                <span class="stat-number">1 - 6</span>
+                                <span class="stat-sub">Min: 1 | Max: 6 instances</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon-wrap amber">📈</div>
+                            <div class="stat-meta">
+                                <span class="stat-caption">Scale Up Threshold</span>
+                                <span class="stat-number">> 65%</span>
+                                <span class="stat-sub">Spawns new Complaint Service</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon-wrap emerald">📉</div>
+                            <div class="stat-meta">
+                                <span class="stat-caption">Scale Down Threshold</span>
+                                <span class="stat-number">< 20%</span>
+                                <span class="stat-sub">After 30s idle duration</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon-wrap cyan">⚖️</div>
+                            <div class="stat-meta">
+                                <span class="stat-caption">Scoring Weights</span>
+                                <span class="stat-number">50/30/20</span>
+                                <span class="stat-sub">CPU (50%), Reqs (30%), Latency (20%)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Interactive Load Tester Trigger -->
+                    <div class="card-panel" style="margin-top: 24px;">
+                        <div class="panel-header-row">
+                            <div class="panel-title-group">
+                                <h2>Interactive Gateway Load Generator</h2>
+                                <p>Trigger simulated CPU-intensive workloads to observe real-time dynamic auto-scaling</p>
+                            </div>
+                            <span class="badge-live">STRESS TESTER</span>
+                        </div>
+
+                        <div class="load-test-control-grid">
+                            <div class="load-slider-box">
+                                <label for="loadDurationSlider">Workload Duration (Seconds): <strong id="durationVal">2.0s</strong></label>
+                                <input type="range" id="loadDurationSlider" min="0.5" max="8.0" step="0.5" value="2.0" oninput="document.getElementById('durationVal').innerText = this.value + 's'">
+                            </div>
+
+                            <div class="load-action-box">
+                                <button class="action-btn primary lg" id="btnTriggerLoad" onclick="triggerGatewayLoadTest()">
+                                    🔥 Fire Load Test Request
+                                </button>
+                                <button class="action-btn highlight lg" id="btnTriggerBurst" onclick="triggerBurstLoadTest()">
+                                    ⚡ Fire Burst (5 Concurrent Requests)
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="loadTestConsole" class="load-test-console" style="display:none;">
+                            <div class="console-header">Gateway Execution Log:</div>
+                            <div class="console-body" id="consoleOutput"></div>
+                        </div>
+                    </div>
+
+                    <!-- Active Instances Telemetry Table -->
+                    <div class="card-panel" style="margin-top: 24px;">
+                        <div class="panel-header-row">
+                            <div class="panel-title-group">
+                                <h2>Active Complaint Service Instances</h2>
+                                <p>Live process table tracked by Gateway Registry Lock</p>
+                            </div>
+                            <button class="refresh-btn" onclick="loadTelemetry()" title="Refresh telemetry">🔄</button>
+                        </div>
+
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Port</th>
+                                    <th>Process ID (PID)</th>
+                                    <th>Healthy</th>
+                                    <th>Active Requests</th>
+                                    <th>Completed</th>
+                                    <th>Avg Latency</th>
+                                    <th>CPU Load</th>
+                                    <th>Load Score</th>
+                                </tr>
+                            </thead>
+                            <tbody id="instancesTableBody">
+                                <tr><td colspan="8" class="loading-cell">Polling instance registry...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+            </main>
+        </div>
+
+        <!-- JUSTIFICATION MODAL -->
+        <div id="justificationModal" class="modal-overlay" onclick="closeJustificationModal(event)">
+            <div class="modal-dialog" onclick="event.stopPropagation()">
+                <div class="modal-header">
+                    <div class="modal-title-row">
+                        <span class="modal-icon">📘</span>
+                        <div>
+                            <h3>Department ID Pattern: Complete Technical Justification</h3>
+                            <p>Standard Specification: <code>^DEPT-[A-Z]{3}-\d{3}$</code></p>
+                        </div>
+                    </div>
+                    <button class="close-modal-btn" onclick="closeJustificationModal()">✕</button>
+                </div>
+                <div class="modal-body" id="justificationModalBody">
+                    <div class="loading-cell">Loading architecture justification...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast Notifications Container -->
+        <div id="toastContainer" class="toast-container"></div>
+
+    </div>
+
+    <!-- Scripts -->
+    <script src="/portal/script.js"></script>
+</body>
+</html>

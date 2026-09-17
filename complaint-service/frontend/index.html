@@ -1,78 +1,102 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
-    <title>Complaint Service</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complaint Service | Municipal Grievance Center</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
-
     <div class="container">
+        <header class="service-header">
+            <div class="brand">
+                <span class="emblem">📝</span>
+                <div>
+                    <h1>Complaint Service Console</h1>
+                    <p class="subtitle">Dynamic Auto-Scaling Instance &bull; Tracking Pattern CMP-2026-XXXXX</p>
+                </div>
+            </div>
+            <a href="http://127.0.0.1:5000/portal#complaints" class="portal-link-btn">🏛️ Open Master Portal</a>
+        </header>
 
-        <h1>Community Civic Portal</h1>
+        <div class="grid-layout">
+            <!-- Submit Complaint -->
+            <section class="card">
+                <div class="card-title-row">
+                    <h2>Report Civic Issue</h2>
+                    <span class="badge">AUTO TRACKING</span>
+                </div>
 
-        <h2>Report Civic Issue</h2>
+                <form id="complaintForm" onsubmit="handleSubmit(event)" novalidate>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Citizen ID *</label>
+                            <input type="number" id="citizenId" placeholder="e.g. 1" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Department Code / ID *</label>
+                            <input type="text" id="departmentId" placeholder="e.g. DEPT-WAT-101 or 1" required>
+                        </div>
+                    </div>
 
-        <form id="complaintForm">
+                    <div class="form-group">
+                        <label>Issue Priority *</label>
+                        <div class="priority-group">
+                            <label><input type="radio" name="priority" value="LOW"> Low</label>
+                            <label><input type="radio" name="priority" value="MEDIUM" checked> Medium</label>
+                            <label><input type="radio" name="priority" value="HIGH"> High</label>
+                            <label><input type="radio" name="priority" value="CRITICAL"> Critical</label>
+                        </div>
+                    </div>
 
-            <label>Citizen ID</label>
-            <input
-                type="number"
-                id="citizenId"
-                placeholder="Enter Citizen ID"
-                required
-            >
+                    <div class="form-group">
+                        <label>Incident Location * <span class="pattern-info">Min 3 chars</span></label>
+                        <input type="text" id="location" placeholder="e.g. 4th Cross, Near Metro Station, Ward 12" required>
+                    </div>
 
-            <label>Department ID</label>
-            <input
-                type="number"
-                id="departmentId"
-                placeholder="Enter Department ID"
-                required
-            >
+                    <div class="form-group">
+                        <label>Issue Description * <span class="pattern-info" id="descCounter">0/1000</span></label>
+                        <textarea id="description" rows="4" placeholder="Detail the civic issue, duration, and urgency (minimum 10 characters)..." required oninput="document.getElementById('descCounter').innerText = this.value.length + '/1000'"></textarea>
+                        <div class="hint">Minimum 10 characters required for dispatch</div>
+                    </div>
 
-            <label>Issue Description</label>
-            <textarea
-                id="description"
-                placeholder="Describe the civic issue"
-                required
-            ></textarea>
+                    <button type="submit" class="submit-btn" id="btnSubmit">Submit Grievance</button>
+                </form>
 
-            <label>Location</label>
-            <input
-                type="text"
-                id="location"
-                placeholder="Enter location"
-                required
-            >
+                <div id="result" class="result-box" style="display:none;"></div>
+            </section>
 
-            <button type="submit">Submit Complaint</button>
+            <!-- Track Complaint -->
+            <section class="card">
+                <div class="card-title-row">
+                    <h2>Track Complaint Status</h2>
+                    <span class="badge">LIVE TRACKER</span>
+                </div>
 
-        </form>
+                <div class="search-box">
+                    <input type="text" id="searchComplaintId" placeholder="Complaint ID or Code (e.g. CMP-2026-W8910 or 1)">
+                    <button type="button" class="btn-search" onclick="findComplaint()">Track</button>
+                </div>
 
-        <div id="result"></div>
+                <div id="complaintDetails" class="details-box">
+                    <p class="placeholder-text">Enter a tracking token to view resolution lifecycle.</p>
+                </div>
 
-        <hr>
-
-        <h2>Track Complaint</h2>
-
-        <input
-            type="number"
-            id="searchComplaintId"
-            placeholder="Complaint ID"
-        >
-
-        <button onclick="findComplaint()">
-            Track Complaint
-        </button>
-
-        <div id="complaintDetails"></div>
-
+                <div class="pattern-legend">
+                    <h3>Tracking Standards:</h3>
+                    <ul>
+                        <li><strong>Token Format:</strong> <code>CMP-YYYY-XXXXX</code> (e.g. CMP-2026-W8910)</li>
+                        <li><strong>Statuses:</strong> OPEN &bull; IN_PROGRESS &bull; RESOLVED &bull; CLOSED</li>
+                        <li><strong>Priorities:</strong> LOW &bull; MEDIUM &bull; HIGH &bull; CRITICAL</li>
+                    </ul>
+                </div>
+            </section>
+        </div>
     </div>
 
     <script src="script.js"></script>
-
 </body>
-
 </html>

@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, Response
+from flask import Flask, request, jsonify, Response, send_from_directory
 from flask_cors import CORS
 
 import requests
@@ -11,6 +11,7 @@ import time
 app = Flask(__name__)
 CORS(app)
 
+PORTAL_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "portal"))
 
 # =========================================================
 # CONFIGURATION
@@ -720,71 +721,53 @@ def monitoring_loop():
 
 
 # =========================================================
-# GATEWAY HOME
+# GATEWAY HOME & CIVIC PORTAL
 # =========================================================
+
+@app.route("/portal", methods=["GET"])
+def portal():
+    return send_from_directory(PORTAL_DIR, "index.html")
+
+
+@app.route("/portal/<path:filename>", methods=["GET"])
+def portal_static(filename):
+    return send_from_directory(PORTAL_DIR, filename)
+
 
 @app.route("/", methods=["GET"])
 def home():
+    accept = request.headers.get("Accept", "")
+    wants_html = ("text/html" in accept) and (request.args.get("format") != "json")
+
+    if wants_html and os.path.exists(os.path.join(PORTAL_DIR, "index.html")):
+        return send_from_directory(PORTAL_DIR, "index.html")
 
     with registry_lock:
-
         instance_data = []
-
         for instance in instances.values():
-
             instance_data.append({
-
                 key: value
-
-                for key, value
-                in instance.items()
-
+                for key, value in instance.items()
                 if key != "process"
             })
 
     return jsonify({
-
-        "service":
-            "Dynamic API Gateway",
-
-        "status":
-            "running",
-
-        "port":
-            GATEWAY_PORT,
-
-        "load_balancing":
-            "Combined Load Score",
-
+        "service": "Dynamic API Gateway",
+        "status": "running",
+        "port": GATEWAY_PORT,
+        "load_balancing": "Combined Load Score",
         "weights": {
-
-            "cpu":
-                "50%",
-
-            "active_requests":
-                "30%",
-
-            "response_time":
-                "20%"
+            "cpu": "50%",
+            "active_requests": "30%",
+            "response_time": "20%"
         },
-
         "scaling": {
-
-            "minimum_instances":
-                MIN_INSTANCES,
-
-            "maximum_instances":
-                MAX_INSTANCES,
-
-            "scale_up_threshold":
-                SCALE_UP_THRESHOLD,
-
-            "scale_down_threshold":
-                SCALE_DOWN_THRESHOLD
+            "minimum_instances": MIN_INSTANCES,
+            "maximum_instances": MAX_INSTANCES,
+            "scale_up_threshold": SCALE_UP_THRESHOLD,
+            "scale_down_threshold": SCALE_DOWN_THRESHOLD
         },
-
-        "instances":
-            instance_data
+        "instances": instance_data
     })
 
 
@@ -883,11 +866,30 @@ def citizens():
 
 
 # =========================================================
-# GET CITIZEN
+# GET CITIZEN & JUSTIFICATION
 # =========================================================
 
 @app.route(
-    "/api/citizens/<int:citizen_id>",
+    "/api/citizens/justification",
+    methods=["GET"]
+)
+def get_citizen_justification():
+    try:
+        response = requests.get(
+            f"{CITIZEN_SERVICE_URL}/citizens/justification",
+            timeout=5
+        )
+        return Response(
+            response.content,
+            status=response.status_code,
+            content_type=response.headers.get("Content-Type")
+        )
+    except requests.exceptions.RequestException:
+        return jsonify({"error": "Citizen Service is unavailable"}), 503
+
+
+@app.route(
+    "/api/citizens/<citizen_id>",
     methods=["GET"]
 )
 def get_citizen(citizen_id):
@@ -1066,7 +1068,7 @@ def complaints():
 # =========================================================
 
 @app.route(
-    "/api/complaints/<int:complaint_id>",
+    "/api/complaints/<complaint_id>",
     methods=["GET"]
 )
 def get_complaint(complaint_id):
@@ -1160,6 +1162,47 @@ def get_complaint(complaint_id):
         finish_instance_request(
             instance
         )
+
+
+# =========================================================
+# UPDATE COMPLAINT STATUS
+# =========================================================
+
+@app.route(
+    "/api/complaints/<int:complaint_id>/status",
+    methods=["PATCH", "PUT"]
+)
+def update_complaint_status(complaint_id):
+
+    instance = select_instance()
+
+    if not instance:
+        return jsonify({
+            "error": "No healthy Complaint Service instances available"
+        }), 503
+
+    try:
+        response = requests.patch(
+            f"{instance['url']}/complaints/{complaint_id}/status",
+            json=request.get_json(),
+            timeout=10
+        )
+
+        return Response(
+            response.content,
+            status=response.status_code,
+            content_type=response.headers.get("Content-Type")
+        )
+
+    except requests.exceptions.RequestException:
+        with registry_lock:
+            instance["healthy"] = False
+        return jsonify({
+            "error": "Complaint Service instance is unavailable"
+        }), 503
+
+    finally:
+        finish_instance_request(instance)
 
 
 # =========================================================
@@ -1353,11 +1396,39 @@ def departments():
 
 
 # =========================================================
+# DEPARTMENT JUSTIFICATION
+# =========================================================
+
+@app.route(
+    "/api/departments/justification",
+    methods=["GET"]
+)
+def get_department_justification():
+
+    try:
+        response = requests.get(
+            f"{DEPARTMENT_SERVICE_URL}/departments/justification",
+            timeout=5
+        )
+
+        return Response(
+            response.content,
+            status=response.status_code,
+            content_type=response.headers.get("Content-Type")
+        )
+
+    except requests.exceptions.RequestException:
+        return jsonify({
+            "error": "Department Service is unavailable"
+        }), 503
+
+
+# =========================================================
 # GET DEPARTMENT
 # =========================================================
 
 @app.route(
-    "/api/departments/<int:department_id>",
+    "/api/departments/<department_id>",
     methods=["GET"]
 )
 def get_department(department_id):
@@ -1399,7 +1470,7 @@ def get_department(department_id):
 # =========================================================
 
 @app.route(
-    "/api/departments/<int:department_id>/complaints",
+    "/api/departments/<department_id>/complaints",
     methods=["GET"]
 )
 def get_department_complaints(
@@ -1444,7 +1515,7 @@ def get_department_complaints(
 # =========================================================
 
 @app.route(
-    "/api/departments/<int:department_id>/citizens",
+    "/api/departments/<department_id>/citizens",
     methods=["GET"]
 )
 def get_department_citizens(

@@ -1,87 +1,125 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
-
-    <title>Department Service</title>
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Department Service | Municipal Microservices Portal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
-
 </head>
-
 <body>
-
     <div class="container">
+        <header class="service-header">
+            <div class="brand">
+                <span class="emblem">🏢</span>
+                <div>
+                    <h1>Department Service Console</h1>
+                    <p class="subtitle">Microservice Instance :5005 &bull; Standardized DEPT-[A-Z]{3}-\d{3} Catalog</p>
+                </div>
+            </div>
+            <a href="http://127.0.0.1:5000/portal#departments" class="portal-link-btn">🏛️ Open Master Portal</a>
+        </header>
 
-        <h1>Department Service</h1>
-
-        <section>
-
-            <h2>Add Department</h2>
-
-            <input
-                id="name"
-                type="text"
-                placeholder="Department name"
-            >
-
-            <input
-                id="contact"
-                type="text"
-                placeholder="Contact"
-            >
-
-            <textarea
-                id="description"
-                placeholder="Description"
-            ></textarea>
-
-            <button onclick="createDepartment()">
-                Add Department
-            </button>
-
+        <!-- Department ID Pattern Justification Banner -->
+        <section class="card justification-banner">
+            <div class="just-header">
+                <span class="tag">ARCHITECTURE SPECIFICATION</span>
+                <h2>Why the <code>DEPT-[A-Z]{3}-\d{3}</code> ID Pattern Was Chosen</h2>
+            </div>
+            <div class="just-grid">
+                <div class="just-item">
+                    <h4>1. Semantic Readability</h4>
+                    <p><code>DEPT-WAT-101</code> immediately identifies Water Supply Division 101 to operators and citizens without raw integer ambiguity.</p>
+                </div>
+                <div class="just-item">
+                    <h4>2. Zero-DB Gateway Routing</h4>
+                    <p>API Gateway can parse sector tokens (<code>WAT</code>, <code>ELE</code>) using regex to route tickets to specific microservice queues with zero database queries.</p>
+                </div>
+                <div class="just-item">
+                    <h4>3. Multi-Zone Collision Resistance</h4>
+                    <p>Namespaced keys prevent primary-key collisions during municipal amalgamations or state-level federation.</p>
+                </div>
+                <div class="just-item">
+                    <h4>4. NUDM & ISO Alignment</h4>
+                    <p>Conforms to India's National Urban Digital Mission (NUDM) taxonomy and ISO 3166-2 public administration standards.</p>
+                </div>
+            </div>
         </section>
 
+        <div class="grid-layout" style="margin-top: 20px;">
+            <!-- Register Department -->
+            <section class="card">
+                <div class="card-title-row">
+                    <h2>Register Department</h2>
+                    <span class="badge">DEPT-XXX-000</span>
+                </div>
 
-        <section>
+                <form id="deptForm" onsubmit="handleDeptSubmit(event)" novalidate>
+                    <div class="form-group">
+                        <label>Department ID / Code * <span class="pattern-info">^DEPT-[A-Z]{3}-\d{3}$</span></label>
+                        <input type="text" id="code" placeholder="e.g. DEPT-WAT-101" required autocomplete="off" style="text-transform: uppercase;">
+                        <div class="hint" id="codeHint">Pattern: DEPT-[SECTOR]-[NUM] (e.g., DEPT-WAT-101)</div>
+                    </div>
 
-            <h2>Departments</h2>
+                    <div class="form-group">
+                        <label>Department Name * <span class="pattern-info">3-70 chars</span></label>
+                        <input type="text" id="name" placeholder="e.g. Water Supply & Sewerage Board" required autocomplete="off">
+                        <div class="hint" id="nameHint"></div>
+                    </div>
 
-            <button onclick="loadDepartments()">
-                Load Departments
-            </button>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Official Contact * <span class="pattern-info">10 Digits / 1800</span></label>
+                            <input type="tel" id="contact" placeholder="9845011001" required autocomplete="off">
+                            <div class="hint" id="contactHint"></div>
+                        </div>
 
-            <div id="departments"></div>
+                        <div class="form-group">
+                            <label>Official Email <span class="pattern-info">@civic.gov.in</span></label>
+                            <input type="email" id="email" placeholder="watersupply@civic.gov.in" autocomplete="off">
+                        </div>
+                    </div>
 
-        </section>
+                    <div class="form-group">
+                        <label>Scope & Description</label>
+                        <textarea id="description" placeholder="Department responsibilities, emergency response SLA, and operational zones..." rows="3"></textarea>
+                    </div>
 
+                    <button type="submit" class="submit-btn" id="btnSubmit">Add Department</button>
+                </form>
 
-        <section>
+                <div id="result" class="result-box" style="display:none;"></div>
+            </section>
 
-            <h2>Department Information</h2>
+            <!-- Department Explorer & Records -->
+            <section class="card">
+                <div class="card-title-row">
+                    <h2>Department Catalog & Inspector</h2>
+                    <button class="btn-refresh" onclick="loadDepartments()">🔄 Refresh</button>
+                </div>
 
-            <input
-                id="departmentId"
-                type="number"
-                placeholder="Department ID"
-            >
+                <div class="lookup-controls">
+                    <input type="text" id="deptLookupId" placeholder="Department ID or Code (e.g. DEPT-WAT-101 or 1)">
+                    <div class="lookup-btns">
+                        <button type="button" class="btn-action" onclick="loadDepartmentComplaints()">View Complaints</button>
+                        <button type="button" class="btn-action secondary" onclick="loadDepartmentCitizens()">View Citizens</button>
+                    </div>
+                </div>
 
-            <button onclick="loadComplaints()">
-                View Complaints
-            </button>
+                <div id="deptDetails" class="details-box">
+                    <p class="placeholder-text">Select an action above or click on a department card below.</p>
+                </div>
 
-            <button onclick="loadCitizens()">
-                View Citizens
-            </button>
-
-            <pre id="details"></pre>
-
-        </section>
-
+                <h3 style="font-size:13px; color:#e2e8f0; margin-bottom: 8px;">Active Municipal Departments:</h3>
+                <div id="departmentsList" class="depts-mini-list">
+                    <div class="placeholder-text">Loading departments...</div>
+                </div>
+            </section>
+        </div>
     </div>
 
     <script src="script.js"></script>
-
 </body>
-
 </html>
